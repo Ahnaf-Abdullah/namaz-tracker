@@ -28,11 +28,27 @@ class HadithService {
   private readonly CACHE_TIMESTAMP_KEY = 'hadith_timestamp';
   private readonly API_CACHE_KEY = 'api_status';
 
-  // Multiple API endpoints for reliability
+  // Helper method to detect Arabic text
+  private isArabicText(text: string): boolean {
+    const arabicRegex = /[\u0600-\u06FF\u0750-\u077F]/;
+    return arabicRegex.test(text);
+  }
+
+  // Helper method to get collection name from URL
+  private getCollectionName(url: string): string {
+    if (url.includes('bukhari')) return 'Sahih al-Bukhari';
+    if (url.includes('muslim')) return 'Sahih Muslim';
+    if (url.includes('tirmidhi')) return 'Jami at-Tirmidhi';
+    if (url.includes('dawud')) return 'Sunan Abu Dawud';
+    if (url.includes('nasai')) return 'Sunan an-Nasai';
+    return 'Islamic Collection';
+  }
+
+  // Reliable English hadith APIs
   private readonly API_ENDPOINTS = [
-    'https://hadithapi.com/api/hadiths/?apikey=SqVsZYJIkmsKdigWkMLsAjmAhvYpOuEY',
-    'https://api.hadith.gading.dev/books/bukhari',
-    'https://hadis-api-id.vercel.app/hadith',
+    'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/eng-bukhari.json',
+    'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/eng-muslim.json',
+    'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/eng-tirmidhi.json',
   ];
 
   // Check if we need to fetch new hadith (every 12 hours)
@@ -116,32 +132,8 @@ class HadithService {
         return null;
       }
 
-      // Use working API
-      let apiUrl = apiTest.api!;
-
-      // Add random parameters to get different hadiths
-      if (apiUrl.includes('hadithapi.com')) {
-        apiUrl += `&hadithEnglish=&limit=1&random=1`;
-      } else if (apiUrl.includes('gading.dev')) {
-        const randomPage = Math.floor(Math.random() * 100) + 1;
-        apiUrl += `?range=${randomPage}-${randomPage}`;
-      } else if (apiUrl.includes('vercel.app')) {
-        const collections = [
-          'abu-dawud',
-          'ahmad',
-          'bukhari',
-          'darimi',
-          'ibnu-majah',
-          'malik',
-          'muslim',
-          'nasai',
-          'tirmidzi',
-        ];
-        const randomCollection =
-          collections[Math.floor(Math.random() * collections.length)];
-        const randomPage = Math.floor(Math.random() * 50) + 1;
-        apiUrl += `/${randomCollection}?page=${randomPage}&limit=1`;
-      }
+      // Use working JSDelivr API (no URL modifications needed)
+      const apiUrl = apiTest.api!;
 
       console.log(`🌐 Fetching from: ${apiUrl}`);
 
@@ -166,38 +158,31 @@ class HadithService {
       const data = await response.json();
       console.log('📖 API Response received:', Object.keys(data));
 
-      // Parse response based on API format
+      // Parse JSDelivr hadith API response (reliable English content)
       let hadith: Hadith | null = null;
 
-      if (data.hadiths && data.hadiths.length > 0) {
-        // HadithAPI.com format
-        const h = data.hadiths[0];
-        hadith = {
-          id: h.id || Math.random(),
-          text: h.hadithEnglish || h.hadith || 'No text available',
-          reference: h.englishNarrator || h.attribution || 'Unknown',
-          collection:
-            h.book?.bookName || h.headingEnglish || 'Islamic Collection',
-          narrator: h.englishNarrator,
-        };
-      } else if (data.data && data.data.hadiths) {
-        // Gading.dev format
-        const h = data.data.hadiths[0];
-        hadith = {
-          id: h.number || Math.random(),
-          text: h.arab || h.text || 'No text available',
-          reference: h.id || 'Unknown',
-          collection: 'Sahih Bukhari',
-        };
-      } else if (data.data && data.data.items) {
-        // Vercel API format
-        const h = data.data.items[0];
-        hadith = {
-          id: h.number || Math.random(),
-          text: h.arab || h.text || 'No text available',
-          reference: h.id || 'Unknown',
-          collection: data.data.name || 'Islamic Collection',
-        };
+      if (
+        data.hadiths &&
+        Array.isArray(data.hadiths) &&
+        data.hadiths.length > 0
+      ) {
+        // JSDelivr format - guaranteed English hadiths
+        const randomIndex = Math.floor(Math.random() * data.hadiths.length);
+        const h = data.hadiths[randomIndex];
+
+        if (h.text && !this.isArabicText(h.text)) {
+          const collectionName =
+            data.metadata?.name || this.getCollectionName(apiUrl);
+
+          hadith = {
+            id: h.hadithnumber || h.arabicnumber || Math.random(),
+            text: h.text,
+            reference: `${collectionName} ${
+              h.hadithnumber || h.arabicnumber || ''
+            }`.trim(),
+            collection: collectionName,
+          };
+        }
       }
 
       if (hadith && hadith.text && hadith.text !== 'No text available') {

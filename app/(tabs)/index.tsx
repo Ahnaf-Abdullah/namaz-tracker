@@ -14,6 +14,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/Card';
 import { CheckBox } from '@/components/CheckBox';
+import HadithCard from '@/components/HadithCard';
 import {
   Clock,
   Calendar,
@@ -213,6 +214,8 @@ export default function HomeScreen() {
             Assalamu Alaikum, {user?.name || 'User'}!
           </Text>
         </View>
+
+        <HadithCard />
 
         <Card style={styles.progressCard}>
           <Text style={styles.progressText}>Today's Progress</Text>

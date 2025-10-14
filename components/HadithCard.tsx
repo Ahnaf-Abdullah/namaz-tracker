@@ -23,12 +23,17 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
   useEffect(() => {
     loadDailyHadith();
   }, []);
+  const [dataSource, setDataSource] = useState<'api' | 'cache' | 'local'>(
+    'local'
+  );
 
   const loadDailyHadith = async () => {
     try {
       setLoading(true);
-      const dailyHadith = await hadithService.getDailyHadith();
-      setHadith(dailyHadith);
+      const result = await hadithService.getDailyHadith();
+      setHadith(result.hadith);
+      setDataSource(result.source);
+      console.log(`📱 Hadith loaded from: ${result.source}`);
     } catch (error) {
       console.error('Error loading hadith:', error);
       // Set a fallback hadith if there's an error
@@ -38,6 +43,7 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
         reference: 'Narrated by Umar ibn al-Khattab (RA)',
         collection: 'Bukhari & Muslim',
       });
+      setDataSource('local');
     } finally {
       setLoading(false);
     }
@@ -46,11 +52,12 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      // Force fetch new hadith by clearing cache
-      await hadithService.clearCache();
+      console.log('🔄 Manual refresh requested');
 
-      const newHadith = await hadithService.getDailyHadith();
-      setHadith(newHadith);
+      // Force fetch new hadith from API
+      const result = await hadithService.getDailyHadith(true);
+      setHadith(result.hadith);
+      setDataSource(result.source);
       onRefresh?.();
     } catch (error) {
       console.error('Error refreshing hadith:', error);
@@ -133,6 +140,11 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
       color: theme.textSecondary,
       padding: 20,
     },
+    sourceIndicator: {
+      fontSize: 10,
+      fontWeight: '600',
+      textTransform: 'uppercase',
+    },
   });
 
   if (loading) {
@@ -162,6 +174,36 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
         <View style={styles.titleContainer}>
           <Book size={20} color={theme.secondary} />
           <Text style={styles.title}>Daily Hadith</Text>
+          <Text
+            style={[
+              styles.sourceIndicator,
+              {
+                color:
+                  dataSource === 'api'
+                    ? '#4CAF50'
+                    : dataSource === 'cache'
+                    ? '#FF9800'
+                    : '#757575',
+                fontSize: 10,
+                marginLeft: 8,
+                paddingHorizontal: 6,
+                paddingVertical: 2,
+                borderRadius: 4,
+                backgroundColor:
+                  dataSource === 'api'
+                    ? '#4CAF5020'
+                    : dataSource === 'cache'
+                    ? '#FF980020'
+                    : '#75757520',
+              },
+            ]}
+          >
+            {dataSource === 'api'
+              ? '🌐 LIVE'
+              : dataSource === 'cache'
+              ? ' CACHED'
+              : ' LOCAL'}
+          </Text>
         </View>
         <TouchableOpacity
           onPress={handleRefresh}
@@ -180,9 +222,9 @@ export default function HadithCard({ onRefresh }: HadithCardProps) {
 
       <View style={styles.attribution}>
         <Text style={styles.reference}>— {hadith.collection}</Text>
-        {hadith.reference && (
+        {/* {hadith.reference && (
           <Text style={styles.source}>{hadith.reference}</Text>
-        )}
+        )} */}
       </View>
     </View>
   );

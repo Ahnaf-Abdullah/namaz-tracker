@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/Card';
+import { pointsService } from '@/services/pointsService';
 import {
   Search,
   UserPlus,
@@ -64,7 +65,28 @@ export default function FriendsScreen() {
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [pendingRequests, setPendingRequests] = useState<PendingRequest[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      loadLeaderboard();
+      // Refresh leaderboard every 30 seconds
+      const interval = setInterval(loadLeaderboard, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const loadLeaderboard = async () => {
+    try {
+      const result = await pointsService.getLeaderboard(10);
+      if (result.success && result.data) {
+        setLeaderboard(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading leaderboard:', error);
+    }
+  };
 
   // Mock data - in real app this would come from Firebase
   const mockFriends: Friend[] = [
@@ -149,9 +171,9 @@ export default function FriendsScreen() {
     isOnline: true,
   };
 
-  const leaderboard = [currentUser, ...friends]
-    .sort((a, b) => b.dailyPoints - a.dailyPoints)
-    .map((friend, index) => ({ ...friend, rank: index + 1 }));
+  // Use real leaderboard data from the database
+  const displayLeaderboard =
+    leaderboard.length > 0 ? leaderboard : [currentUser];
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -469,43 +491,46 @@ export default function FriendsScreen() {
 
         {/* Leaderboard */}
         <Text style={styles.sectionTitle}>Daily Leaderboard</Text>
-        {leaderboard.map((friend) => (
+        {displayLeaderboard.map((user, index) => (
           <View
-            key={friend.id}
+            key={user.userId || user.id}
             style={[
               styles.leaderboardItem,
-              friend.id === 'current' && styles.currentUserItem,
+              user.userId === user?.id && styles.currentUserItem,
             ]}
           >
             <View style={styles.rankContainer}>
-              {getRankIcon(friend.rank)}
-              <Text style={styles.rankText}>#{friend.rank}</Text>
+              {getRankIcon(user.rank || index + 1)}
+              <Text style={styles.rankText}>#{user.rank || index + 1}</Text>
             </View>
 
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {friend.name
+                {(user.userName || user.name || 'Unknown')
                   .split(' ')
-                  .map((n) => n[0])
+                  .map((n: string) => n[0])
                   .join('')
                   .slice(0, 2)
                   .toUpperCase()}
               </Text>
-              {friend.isOnline && <View style={styles.onlineIndicator} />}
+              {user.isOnline && <View style={styles.onlineIndicator} />}
             </View>
 
             <View style={styles.userInfo}>
               <Text style={styles.userName}>
-                {friend.id === 'current' ? 'You' : friend.name}
+                {user.userId === user?.id
+                  ? 'You'
+                  : user.userName || user.name || 'Unknown User'}
               </Text>
               <Text style={styles.userStats}>
-                {friend.prayersCompleted}/5 prayers • {friend.streak} day streak
+                {user.prayersCompleted?.length || 0}/5 prayers •{' '}
+                {user.totalPoints || 0} points
               </Text>
             </View>
 
             <View style={styles.pointsContainer}>
-              <Text style={styles.dailyPoints}>{friend.dailyPoints}</Text>
-              <Text style={styles.totalPoints}>{friend.totalPoints} total</Text>
+              <Text style={styles.dailyPoints}>{user.totalPoints || 0}</Text>
+              <Text style={styles.totalPoints}>daily score</Text>
             </View>
           </View>
         ))}

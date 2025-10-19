@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +16,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/Card';
 import { CheckBox } from '@/components/CheckBox';
 import HadithCard from '@/components/HadithCard';
+import {
+  pointsService,
+  PrayerPoints,
+  UserStats,
+} from '@/services/pointsService';
 import {
   Clock,
   Calendar,
@@ -49,6 +55,11 @@ export default function HomeScreen() {
   ]);
 
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [dailyPoints, setDailyPoints] = useState(0);
+  const [lastPrayerPoints, setLastPrayerPoints] = useState<PrayerPoints | null>(
+    null
+  );
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -57,10 +68,97 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const togglePrayer = (index: number) => {
+  useEffect(() => {
+    if (user) {
+      loadUserStats();
+      loadDailyScore();
+      loadCompletedPrayers();
+    }
+  }, [user]);
+
+  const loadUserStats = async () => {
+    if (!user) return;
+
+    const result = await pointsService.getUserStats(user.id);
+    if (result.success && result.data) {
+      setUserStats(result.data);
+    }
+  };
+
+  const loadDailyScore = async () => {
+    if (!user) return;
+
+    const result = await pointsService.getDailyScore(user.id);
+    if (result.success && result.data) {
+      setDailyPoints(result.data.totalPoints);
+    }
+  };
+
+  const loadCompletedPrayers = async () => {
+    if (!user) return;
+
+    const result = await pointsService.getDailyScore(user.id);
+    if (result.success && result.data && result.data.prayersCompleted) {
+      // Update prayer completion status based on database
+      const updatedPrayers = prayers.map((prayer) => ({
+        ...prayer,
+        completed: result.data!.prayersCompleted.includes(prayer.name),
+      }));
+      setPrayers(updatedPrayers);
+    }
+  };
+
+  const togglePrayer = async (index: number) => {
+    if (!user) return;
+
+    const prayer = prayers[index];
+
+    // Prevent unchecking completed prayers
+    if (prayer.completed) {
+      Alert.alert(
+        'Prayer Already Completed',
+        'You cannot uncheck a completed prayer. Each prayer can only be marked once per day.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    // Mark prayer as completed
     const updatedPrayers = [...prayers];
-    updatedPrayers[index].completed = !updatedPrayers[index].completed;
+    updatedPrayers[index].completed = true;
     setPrayers(updatedPrayers);
+
+    // Award points for completing the prayer
+    const result = await pointsService.completePrayer(user.id, prayer.name);
+
+    if (result.success && result.points) {
+      setLastPrayerPoints(result.points);
+      setDailyPoints(result.dailyTotal || 0);
+
+      // Show points notification
+      Alert.alert(
+        '🎉 Prayer Completed!',
+        `You earned ${result.points.total} points!\n` +
+          `Base: ${result.points.base} pts\n` +
+          `Speed Bonus: ${result.points.speedBonus} pts\n\n` +
+          `Daily Total: ${result.dailyTotal} points`,
+        [{ text: 'Alhamdulillah!', style: 'default' }]
+      );
+
+      // Refresh stats
+      loadUserStats();
+    } else {
+      // If point awarding failed, revert the checkbox
+      const revertedPrayers = [...prayers];
+      revertedPrayers[index].completed = false;
+      setPrayers(revertedPrayers);
+
+      Alert.alert(
+        'Error',
+        'Failed to save prayer completion. Please try again.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
   };
 
   const completedCount = prayers.filter((prayer) => prayer.completed).length;
@@ -184,6 +282,67 @@ export default function HomeScreen() {
       marginTop: 8,
       lineHeight: 16,
     },
+    pointsCard: {
+      backgroundColor: theme.surface,
+      padding: 20,
+      borderRadius: 12,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    pointsHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    pointsTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    pointsValue: {
+      fontSize: 32,
+      fontWeight: 'bold',
+      color: theme.secondary,
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    statItem: {
+      alignItems: 'center',
+      flex: 1,
+    },
+    statLabel: {
+      fontSize: 12,
+      marginBottom: 4,
+      color: theme.textSecondary,
+    },
+    statValue: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.text,
+    },
+    lastPointsCard: {
+      padding: 12,
+      borderRadius: 8,
+      marginTop: 8,
+      backgroundColor: theme.secondary + '20',
+    },
+    lastPointsText: {
+      fontSize: 14,
+      fontWeight: '500',
+      textAlign: 'center',
+      color: theme.secondary,
+    },
+    bonusText: {
+      fontWeight: 'bold',
+    },
   });
 
   const formatTime = (date: Date) => {
@@ -214,6 +373,53 @@ export default function HomeScreen() {
             Assalamu Alaikum, {user?.name || 'User'}!
           </Text>
         </View>
+
+        {/* Points Dashboard */}
+        <Card style={styles.pointsCard}>
+          <View style={styles.pointsHeader}>
+            <Text style={styles.pointsTitle}>Today's Points</Text>
+            <Text style={styles.pointsValue}>{dailyPoints}</Text>
+          </View>
+
+          {userStats && (
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Highest Score</Text>
+                <Text style={styles.statValue}>
+                  {userStats.highestDailyScore}
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Current Streak</Text>
+                <Text style={styles.statValue}>
+                  {userStats.currentStreak} days
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <Text style={styles.statLabel}>Avg Score</Text>
+                <Text style={styles.statValue}>
+                  {Math.round(userStats.averageDailyScore)}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {lastPrayerPoints && (
+            <View style={styles.lastPointsCard}>
+              <Text style={styles.lastPointsText}>
+                Last Prayer: +{lastPrayerPoints.total} points
+                {lastPrayerPoints.speedBonus > 0 && (
+                  <Text style={styles.bonusText}>
+                    {' '}
+                    (Speed Bonus: +{lastPrayerPoints.speedBonus})
+                  </Text>
+                )}
+              </Text>
+            </View>
+          )}
+        </Card>
 
         <HadithCard />
 

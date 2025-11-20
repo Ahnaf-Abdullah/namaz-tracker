@@ -101,6 +101,39 @@ export const getUserPrayers = async (userId, limit = 50) => {
   }
 };
 
+/**
+ * Get today's completed prayers for a user
+ * @param {string} userId - The user's ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<Array>} Array of completed prayer objects
+ */
+export const getTodaysPrayers = async (userId, date) => {
+  try {
+    const prayersRef = collection(db, 'prayers');
+    const q = query(
+      prayersRef,
+      where('userId', '==', userId),
+      where('date', '==', date),
+      where('completed', '==', true)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const prayers = [];
+
+    querySnapshot.forEach((doc) => {
+      prayers.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    return prayers;
+  } catch (error) {
+    console.error('Error fetching today prayers:', error);
+    return [];
+  }
+};
+
 // Friends/Social Features
 export const sendFriendRequest = async (fromUserId, toUserId) => {
   try {
@@ -265,6 +298,18 @@ export const updateUserDailyScore = async (userId, points, prayerName) => {
 
     // Save daily score
     await setDoc(dailyScoreRef, updatedData, { merge: true });
+
+    // Create prayer record in prayers collection
+    const prayersRef = collection(db, 'prayers');
+    await addDoc(prayersRef, {
+      userId,
+      prayerName,
+      completed: true,
+      date: today,
+      completedAt: now.toISOString(),
+      pointsAwarded: totalPointsForPrayer,
+      timestamp: serverTimestamp(),
+    });
 
     // Update user's highest score if needed
     const userDoc = await getDoc(userRef);

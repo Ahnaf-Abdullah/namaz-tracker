@@ -27,6 +27,8 @@ import {
   getFriendsLeaderboard,
   checkExistingFriendRequest,
   checkFriendship,
+  getUserDailyScore,
+  getUserProfile,
 } from '@/services/database';
 import {
   Search,
@@ -52,6 +54,7 @@ interface Friend {
   prayersCompleted: number;
   streak: number;
   rank?: number;
+  isCurrentUser?: boolean;
 }
 
 interface SearchUser {
@@ -144,9 +147,51 @@ export default function FriendsScreen() {
   const loadFriendsLeaderboard = async () => {
     if (!user?.id) return;
     try {
-      const result = await getFriendsLeaderboard(user.id);
-      if (result.success && result.data) {
-        setFriendsLeaderboard(result.data);
+      const [leaderboardResult, userScoreResult, userProfileResult] =
+        await Promise.all([
+          getFriendsLeaderboard(user.id),
+          getUserDailyScore(user.id),
+          getUserProfile(user.id),
+        ]);
+
+      if (leaderboardResult.success && leaderboardResult.data) {
+        const friendsData = leaderboardResult.data;
+
+        // Get user's own data
+        const userDailyScore = userScoreResult.success
+          ? userScoreResult.data
+          : null;
+        const userProfile: any = userProfileResult.success
+          ? userProfileResult.data
+          : null;
+
+        if (userDailyScore && userProfile) {
+          // Create user's own entry
+          const userData: Friend = {
+            id: user.id,
+            name: user.name || userProfile.name || 'You',
+            email: user.email || userProfile.email || '',
+            dailyPoints: userDailyScore.totalPoints || 0,
+            totalPoints: userProfile.highestDailyScore || 0,
+            prayersCompleted: userDailyScore.prayersCompleted?.length || 0,
+            streak: userProfile.dailyStreak || 0,
+            isCurrentUser: true,
+          };
+
+          // Combine user and friends data
+          const allUsers = [...friendsData, userData];
+
+          // Sort by daily points and assign ranks
+          allUsers.sort((a, b) => b.dailyPoints - a.dailyPoints);
+          const rankedUsers = allUsers.map((user, index) => ({
+            ...user,
+            rank: index + 1,
+          }));
+
+          setFriendsLeaderboard(rankedUsers);
+        } else {
+          setFriendsLeaderboard(friendsData);
+        }
       }
     } catch (error) {
       console.error('Error loading friends leaderboard:', error);
@@ -418,6 +463,11 @@ export default function FriendsScreen() {
       borderWidth: 1,
       borderColor: theme.border,
     },
+    currentUserItem: {
+      backgroundColor: theme.secondary + '15',
+      borderColor: theme.secondary,
+      borderWidth: 2,
+    },
     rankContainer: {
       width: 40,
       alignItems: 'center',
@@ -677,7 +727,13 @@ export default function FriendsScreen() {
                   </View>
                 ) : friendsLeaderboard.length > 0 ? (
                   friendsLeaderboard.map((friend) => (
-                    <View key={friend.id} style={styles.leaderboardItem}>
+                    <View
+                      key={friend.id}
+                      style={[
+                        styles.leaderboardItem,
+                        friend.isCurrentUser && styles.currentUserItem,
+                      ]}
+                    >
                       <View style={styles.rankContainer}>
                         {getRankIcon(friend.rank || 0)}
                         <Text style={styles.rankText}>#{friend.rank}</Text>
@@ -695,7 +751,10 @@ export default function FriendsScreen() {
                       </View>
 
                       <View style={styles.userInfo}>
-                        <Text style={styles.userName}>{friend.name}</Text>
+                        <Text style={styles.userName}>
+                          {friend.name}
+                          {friend.isCurrentUser ? ' (You)' : ''}
+                        </Text>
                         <Text style={styles.userStats}>
                           {friend.prayersCompleted}/5 prayers • Streak:{' '}
                           {friend.streak} days

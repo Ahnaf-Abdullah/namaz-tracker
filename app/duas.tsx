@@ -12,48 +12,12 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Card } from '@/components/Card';
 import { ArrowLeft, ChevronRight } from 'lucide-react-native';
 import { DuaCategory } from '@/types';
+import duasData from '@/data/duas.json';
 
 export default function DuasScreen() {
   const { theme } = useTheme();
 
-  const duaCategories: DuaCategory[] = [
-    {
-      id: '1',
-      title: 'Morning & Evening',
-      description: 'Duas for starting and ending the day',
-      duas: [],
-    },
-    {
-      id: '2',
-      title: 'Before Meals',
-      description: 'Prayers before eating',
-      duas: [],
-    },
-    {
-      id: '3',
-      title: 'Travel Duas',
-      description: 'Prayers for safe journey',
-      duas: [],
-    },
-    {
-      id: '4',
-      title: 'Seeking Forgiveness',
-      description: 'Istighfar and repentance',
-      duas: [],
-    },
-    {
-      id: '5',
-      title: 'Protection',
-      description: 'Duas for protection from harm',
-      duas: [],
-    },
-    {
-      id: '6',
-      title: 'Gratitude',
-      description: 'Prayers of thankfulness',
-      duas: [],
-    },
-  ];
+  const duaCategories: DuaCategory[] = duasData as DuaCategory[];
 
   const styles = StyleSheet.create({
     container: {
@@ -107,21 +71,23 @@ export default function DuasScreen() {
   });
 
   const renderCategory = ({ item }: { item: DuaCategory }) => (
-    <TouchableOpacity activeOpacity={0.7}>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => router.push(`/dua-category?categoryId=${item.id}` as any)}
+    >
       <Card style={styles.categoryItem}>
         <View style={styles.categoryLeft}>
           <Text style={styles.categoryTitle}>{item.title}</Text>
           <Text style={styles.categoryDescription}>{item.description}</Text>
         </View>
-        <ChevronRight 
-          size={20} 
-          color={theme.textSecondary} 
-          style={styles.chevron} 
+        <ChevronRight
+          size={20}
+          color={theme.textSecondary}
+          style={styles.chevron}
         />
       </Card>
     </TouchableOpacity>
   );
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

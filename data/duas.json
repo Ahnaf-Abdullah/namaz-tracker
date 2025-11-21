@@ -1,0 +1,163 @@
+[
+  {
+    "id": "1",
+    "title": "Morning & Evening",
+    "description": "Duas for starting and ending the day",
+    "duas": [
+      {
+        "id": "1-1",
+        "title": "Morning Dua",
+        "arabic": "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+        "transliteration": "Asbahna wa asbahal-mulku lillah, walhamdu lillah, la ilaha illallahu wahdahu la sharika lah, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadir",
+        "english": "We have entered a new day and with it all dominion is Allah's. Praise is to Allah. None has the right to be worshipped but Allah alone, Who has no partner. To Allah belongs the dominion, and to Him is the praise, and He is Able to do all things."
+      },
+      {
+        "id": "1-2",
+        "title": "Evening Dua",
+        "arabic": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ",
+        "transliteration": "Amsayna wa amsal-mulku lillah, walhamdu lillah, la ilaha illallahu wahdahu la sharika lah, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadir",
+        "english": "We have entered the evening and with it all dominion is Allah's. Praise is to Allah. None has the right to be worshipped but Allah alone, Who has no partner. To Allah belongs the dominion, and to Him is the praise, and He is Able to do all things."
+      },
+      {
+        "id": "1-3",
+        "title": "Waking Up",
+        "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+        "transliteration": "Alhamdu lillahil-ladhi ahyana ba'da ma amatana wa ilayhin-nushur",
+        "english": "All praise is to Allah who gave us life after death and unto Him is the resurrection."
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "title": "Before Meals",
+    "description": "Prayers before eating",
+    "duas": [
+      {
+        "id": "2-1",
+        "title": "Before Eating",
+        "arabic": "بِسْمِ اللَّهِ",
+        "transliteration": "Bismillah",
+        "english": "In the name of Allah."
+      },
+      {
+        "id": "2-2",
+        "title": "After Eating",
+        "arabic": "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنَا وَسَقَانَا وَجَعَلَنَا مُسْلِمِينَ",
+        "transliteration": "Alhamdu lillahil-ladhi at'amana wa saqana wa ja'alana muslimin",
+        "english": "All praise is to Allah who fed us, gave us drink, and made us Muslims."
+      },
+      {
+        "id": "2-3",
+        "title": "Before Drinking",
+        "arabic": "بِسْمِ اللَّهِ",
+        "transliteration": "Bismillah",
+        "english": "In the name of Allah."
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Travel Duas",
+    "description": "Prayers for safe journey",
+    "duas": [
+      {
+        "id": "3-1",
+        "title": "Boarding a Vehicle",
+        "arabic": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَٰذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ، وَإِنَّا إِلَىٰ رَبِّنَا لَمُنقَلِبُونَ",
+        "transliteration": "Subhanal-ladhi sakhkhara lana hadha wa ma kunna lahu muqrinin, wa inna ila rabbina lamunqalibun",
+        "english": "Glory to Him who has subjected this to us, and we could never have it (by our efforts). And verily, to our Lord we indeed are to return."
+      },
+      {
+        "id": "3-2",
+        "title": "Traveler's Dua",
+        "arabic": "اللَّهُمَّ إِنَّا نَسْأَلُكَ فِي سَفَرِنَا هَٰذَا الْبِرَّ وَالتَّقْوَىٰ، وَمِنَ الْعَمَلِ مَا تَرْضَىٰ، اللَّهُمَّ هَوِّنْ عَلَيْنَا سَفَرَنَا هَٰذَا، وَاطْوِ عَنَّا بُعْدَهُ",
+        "transliteration": "Allahumma inna nas'aluka fi safarina hadhal-birra wat-taqwa, wa minal-'amali ma tarda, allahumma hawwin 'alayna safarana hadha, watwi 'anna bu'dah",
+        "english": "O Allah, we ask You on this our journey for goodness and piety, and for works that are pleasing to You. O Allah, lighten this journey for us and make its distance easy for us."
+      }
+    ]
+  },
+  {
+    "id": "4",
+    "title": "Seeking Forgiveness",
+    "description": "Istighfar and repentance",
+    "duas": [
+      {
+        "id": "4-1",
+        "title": "Sayyidul Istighfar",
+        "arabic": "اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَٰهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَىٰ عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ",
+        "transliteration": "Allahumma anta rabbi la ilaha illa ant, khalaqtani wa ana 'abduk, wa ana 'ala 'ahdika wa wa'dika mas-tata't, a'udhu bika min sharri ma sana't, abu'u laka bini'matika 'alayy, wa abu'u bidhanbi faghfir li, fa innahu la yaghfirudh-dhunuba illa ant",
+        "english": "O Allah, You are my Lord, none has the right to be worshipped except You. You created me and I am Your servant and I abide by Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favor upon me and I acknowledge my sin, so forgive me, for verily none can forgive sins except You."
+      },
+      {
+        "id": "4-2",
+        "title": "Simple Istighfar",
+        "arabic": "أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ",
+        "transliteration": "Astaghfirullah wa atubu ilayh",
+        "english": "I seek forgiveness from Allah and repent to Him."
+      },
+      {
+        "id": "4-3",
+        "title": "Seeking Forgiveness",
+        "arabic": "رَبِّ اغْفِرْ لِي وَتُبْ عَلَيَّ إِنَّكَ أَنْتَ التَّوَّابُ الرَّحِيمُ",
+        "transliteration": "Rabbighfir li wa tub 'alayya innaka antat-tawwabur-rahim",
+        "english": "My Lord, forgive me and accept my repentance, for You are the Acceptor of Repentance, the Most Merciful."
+      }
+    ]
+  },
+  {
+    "id": "5",
+    "title": "Protection",
+    "description": "Duas for protection from harm",
+    "duas": [
+      {
+        "id": "5-1",
+        "title": "Ayatul Kursi",
+        "arabic": "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ",
+        "transliteration": "Allahu la ilaha illa huwal-hayyul-qayyum, la ta'khudhahu sinatun wa la nawm, lahu ma fis-samawati wa ma fil-ard",
+        "english": "Allah! There is no deity except Him, the Ever-Living, the Sustainer. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth."
+      },
+      {
+        "id": "5-2",
+        "title": "Protection from Evil",
+        "arabic": "أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ",
+        "transliteration": "A'udhu bikalimatillahit-tammati min sharri ma khalaq",
+        "english": "I seek refuge in the perfect words of Allah from the evil of what He has created."
+      },
+      {
+        "id": "5-3",
+        "title": "Morning & Evening Protection",
+        "arabic": "بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+        "transliteration": "Bismillahil-ladhi la yadurru ma'asmihi shay'un fil-ardi wa la fis-sama'i wa huwas-sami'ul-'alim",
+        "english": "In the name of Allah with whose name nothing is harmed on earth nor in the heavens and He is The All-Hearing, The All-Knowing."
+      }
+    ]
+  },
+  {
+    "id": "6",
+    "title": "Gratitude",
+    "description": "Prayers of thankfulness",
+    "duas": [
+      {
+        "id": "6-1",
+        "title": "General Gratitude",
+        "arabic": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+        "transliteration": "Alhamdu lillahi rabbil-'alamin",
+        "english": "All praise is due to Allah, Lord of all the worlds."
+      },
+      {
+        "id": "6-2",
+        "title": "When Receiving Good News",
+        "arabic": "الْحَمْدُ لِلَّهِ الَّذِي بِنِعْمَتِهِ تَتِمُّ الصَّالِحَاتُ",
+        "transliteration": "Alhamdu lillahil-ladhi bini'matihi tatimmus-salihat",
+        "english": "All praise is to Allah by Whose favor good works are accomplished."
+      },
+      {
+        "id": "6-3",
+        "title": "After Sneezing",
+        "arabic": "الْحَمْدُ لِلَّهِ",
+        "transliteration": "Alhamdulillah",
+        "english": "All praise is to Allah."
+      }
+    ]
+  }
+]

@@ -1,0 +1,42 @@
+// Firestore Security Rules for Namaz Tracker Points System
+// Go to Firebase Console > Firestore Database > Rules tab
+// Copy and paste these rules:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection - users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Daily scores collection - users can read/write their own daily scores
+    match /dailyScores/{scoreId} {
+      allow read, write: if request.auth != null && 
+        (scoreId.matches('.*' + request.auth.uid + '_.*') || 
+         request.auth.uid in resource.data.userId);
+      // Allow reading all daily scores for leaderboard
+      allow read: if request.auth != null;
+    }
+    
+    // Historical scores collection - users can read/write their own historical data
+    match /historicalScores/{scoreId} {
+      allow read, write: if request.auth != null && 
+        (scoreId.matches('.*' + request.auth.uid + '_.*') || 
+         request.auth.uid in resource.data.userId);
+      // Allow reading for statistics
+      allow read: if request.auth != null;
+    }
+    
+    // Friends collection (if you have it)
+    match /friends/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Friend requests collection (if you have it)
+    match /friendRequests/{requestId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

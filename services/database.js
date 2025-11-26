@@ -101,6 +101,39 @@ export const getUserPrayers = async (userId, limit = 50) => {
   }
 };
 
+/**
+ * Get today's completed prayers for a user
+ * @param {string} userId - The user's ID
+ * @param {string} date - Date in YYYY-MM-DD format
+ * @returns {Promise<Array>} Array of completed prayer objects
+ */
+export const getTodaysPrayers = async (userId, date) => {
+  try {
+    const prayersRef = collection(db, 'prayers');
+    const q = query(
+      prayersRef,
+      where('userId', '==', userId),
+      where('date', '==', date),
+      where('completed', '==', true)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const prayers = [];
+
+    querySnapshot.forEach((doc) => {
+      prayers.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+
+    return prayers;
+  } catch (error) {
+    console.error('Error fetching today prayers:', error);
+    return [];
+  }
+};
+
 // Friends/Social Features
 export const sendFriendRequest = async (fromUserId, toUserId) => {
   try {
@@ -214,6 +247,210 @@ export const searchUsers = async (searchTerm) => {
   }
 };
 
+// Search users by email (exact match)
+export const searchUsersByEmail = async (email) => {
+  try {
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+
+    const users = [];
+    querySnapshot.forEach((doc) => {
+      users.push({ id: doc.id, ...doc.data() });
+    });
+
+    return { success: true, data: users };
+  } catch (error) {
+    console.error('Error searching users by email:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Check if friend request already exists
+export const checkExistingFriendRequest = async (fromUserId, toUserId) => {
+  try {
+    const friendRequestsRef = collection(db, 'friendRequests');
+    const q = query(
+      friendRequestsRef,
+      where('from', '==', fromUserId),
+      where('to', '==', toUserId)
+    );
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+  } catch (error) {
+    console.error('Error checking friend request:', error);
+    return false;
+  }
+};
+
+// Check if users are already friends
+export const checkFriendship = async (userId1, userId2) => {
+  try {
+    const friendshipsRef = collection(db, 'friendships');
+    const q1 = query(
+      friendshipsRef,
+      where('user1', '==', userId1),
+      where('user2', '==', userId2)
+    );
+    const q2 = query(
+      friendshipsRef,
+      where('user1', '==', userId2),
+      where('user2', '==', userId1)
+    );
+
+    const [snapshot1, snapshot2] = await Promise.all([
+      getDocs(q1),
+      getDocs(q2),
+    ]);
+
+    return !snapshot1.empty || !snapshot2.empty;
+  } catch (error) {
+    console.error('Error checking friendship:', error);
+    return false;
+  }
+};
+
+// Reject friend request
+export const rejectFriendRequest = async (requestId) => {
+  try {
+    const requestRef = doc(db, 'friendRequests', requestId);
+    await updateDoc(requestRef, {
+      status: 'rejected',
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Error rejecting friend request:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get pending friend requests with user details
+export const getPendingRequestsWithDetails = async (userId) => {
+  try {
+    const friendRequestsRef = collection(db, 'friendRequests');
+    const q = query(
+      friendRequestsRef,
+      where('to', '==', userId),
+      where('status', '==', 'pending')
+    );
+
+    const querySnapshot = await getDocs(q);
+    const requests = [];
+
+    for (const docSnap of querySnapshot.docs) {
+      const requestData = docSnap.data();
+      const fromUserRef = doc(db, 'users', requestData.from);
+      const fromUserSnap = await getDoc(fromUserRef);
+
+      if (fromUserSnap.exists()) {
+        requests.push({
+          id: docSnap.id,
+          ...requestData,
+          fromUser: {
+            id: fromUserSnap.id,
+            ...fromUserSnap.data(),
+          },
+        });
+      }
+    }
+
+    // Sort by timestamp in code instead of query
+    requests.sort((a, b) => {
+      const timeA = a.timestamp?.toMillis ? a.timestamp.toMillis() : 0;
+      const timeB = b.timestamp?.toMillis ? b.timestamp.toMillis() : 0;
+      return timeB - timeA; // Descending order (newest first)
+    });
+
+    return { success: true, data: requests };
+  } catch (error) {
+    console.error('Error getting pending requests:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get friends with their details
+export const getFriendsWithDetails = async (userId) => {
+  try {
+    const friendshipsRef = collection(db, 'friendships');
+    const q1 = query(friendshipsRef, where('user1', '==', userId));
+    const q2 = query(friendshipsRef, where('user2', '==', userId));
+
+    const [snapshot1, snapshot2] = await Promise.all([
+      getDocs(q1),
+      getDocs(q2),
+    ]);
+
+    const friendIds = new Set();
+    snapshot1.forEach((doc) => {
+      friendIds.add(doc.data().user2);
+    });
+    snapshot2.forEach((doc) => {
+      friendIds.add(doc.data().user1);
+    });
+
+    const friends = [];
+    const today = new Date().toISOString().split('T')[0];
+
+    for (const friendId of friendIds) {
+      const userRef = doc(db, 'users', friendId);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+
+        // Get today's daily score
+        const dailyScoreRef = doc(db, 'dailyScores', `${friendId}_${today}`);
+        const dailyScoreSnap = await getDoc(dailyScoreRef);
+        const dailyData = dailyScoreSnap.exists()
+          ? dailyScoreSnap.data()
+          : { totalPoints: 0, prayersCompleted: [] };
+
+        friends.push({
+          id: userSnap.id,
+          name: userData.name || 'Unknown',
+          email: userData.email || '',
+          dailyPoints: dailyData.totalPoints || 0,
+          totalPoints: userData.highestDailyScore || 0,
+          prayersCompleted: dailyData.prayersCompleted?.length || 0,
+          streak: userData.dailyStreak || 0,
+        });
+      }
+    }
+
+    return { success: true, data: friends };
+  } catch (error) {
+    console.error('Error getting friends with details:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+// Get friends leaderboard (sorted by today's points)
+export const getFriendsLeaderboard = async (userId) => {
+  try {
+    const result = await getFriendsWithDetails(userId);
+    if (!result.success) {
+      return result;
+    }
+
+    // Sort by daily points (descending)
+    const sortedFriends = result.data.sort(
+      (a, b) => b.dailyPoints - a.dailyPoints
+    );
+
+    // Add rank
+    const rankedFriends = sortedFriends.map((friend, index) => ({
+      ...friend,
+      rank: index + 1,
+    }));
+
+    return { success: true, data: rankedFriends };
+  } catch (error) {
+    console.error('Error getting friends leaderboard:', error);
+    return { success: false, error: error.message };
+  }
+};
+
 // Points and Scoring Operations
 export const updateUserDailyScore = async (userId, points, prayerName) => {
   try {
@@ -265,6 +502,18 @@ export const updateUserDailyScore = async (userId, points, prayerName) => {
 
     // Save daily score
     await setDoc(dailyScoreRef, updatedData, { merge: true });
+
+    // Create prayer record in prayers collection
+    const prayersRef = collection(db, 'prayers');
+    await addDoc(prayersRef, {
+      userId,
+      prayerName,
+      completed: true,
+      date: today,
+      completedAt: now.toISOString(),
+      pointsAwarded: totalPointsForPrayer,
+      timestamp: serverTimestamp(),
+    });
 
     // Update user's highest score if needed
     const userDoc = await getDoc(userRef);

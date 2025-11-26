@@ -1,0 +1,16 @@
+// TEMPORARY DEVELOPMENT RULES - NOT FOR PRODUCTION
+// Go to Firebase Console > Firestore Database > Rules tab
+// Copy and paste these rules for development only:
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write all documents
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+
+// NOTE: These rules allow any authenticated user to access all data.
+// Use the production rules from firestore-rules.txt for actual deployment.

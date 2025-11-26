@@ -21,6 +21,8 @@ import {
   PrayerPoints,
   UserStats,
 } from '@/services/pointsService';
+import { prayerTimesService, PrayerTimes } from '@/services/prayerTimesService';
+import * as db from '@/services/database';
 import {
   Clock,
   Calendar,
@@ -31,6 +33,8 @@ import {
   Book,
   Heart,
   Compass,
+  MapPin,
+  RefreshCw,
 } from 'lucide-react-native';
 
 interface Prayer {
@@ -47,12 +51,16 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const [prayers, setPrayers] = useState<Prayer[]>([
-    { name: 'Fajr', time: '05:30', completed: false, icon: Sun },
-    { name: 'Dhuhr', time: '12:45', completed: false, icon: Sun },
-    { name: 'Asr', time: '16:15', completed: false, icon: Sunset },
-    { name: 'Maghrib', time: '18:45', completed: false, icon: Sunset },
-    { name: 'Isha', time: '20:30', completed: false, icon: Moon },
+    { name: 'Fajr', time: 'Loading...', completed: false, icon: Sun },
+    { name: 'Dhuhr', time: 'Loading...', completed: false, icon: Sun },
+    { name: 'Asr', time: 'Loading...', completed: false, icon: Sunset },
+    { name: 'Maghrib', time: 'Loading...', completed: false, icon: Sunset },
+    { name: 'Isha', time: 'Loading...', completed: false, icon: Moon },
   ]);
+
+  const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
+  const [locationCity, setLocationCity] = useState<string>('Loading...');
+  const [loadingPrayerTimes, setLoadingPrayerTimes] = useState(true);
 
   const [currentTime, setCurrentTime] = useState(new Date());
   const [userStats, setUserStats] = useState<UserStats | null>(null);
@@ -72,9 +80,16 @@ export default function HomeScreen() {
     if (user) {
       loadUserStats();
       loadDailyScore();
-      loadCompletedPrayers();
+      loadPrayerTimesAndCompletedPrayers();
     }
   }, [user]);
+
+  const loadPrayerTimesAndCompletedPrayers = async () => {
+    // Load prayer times first
+    await loadPrayerTimes();
+    // Then load completed prayers to update checkboxes
+    await loadCompletedPrayers();
+  };
 
   const loadUserStats = async () => {
     if (!user) return;
@@ -97,14 +112,86 @@ export default function HomeScreen() {
   const loadCompletedPrayers = async () => {
     if (!user) return;
 
-    const result = await pointsService.getDailyScore(user.id);
-    if (result.success && result.data && result.data.prayersCompleted) {
+    try {
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date().toISOString().split('T')[0];
+
+      // Fetch completed prayers from Firestore
+      const completedPrayers = await db.getTodaysPrayers(user.id, today);
+
       // Update prayer completion status based on database
-      const updatedPrayers = prayers.map((prayer) => ({
-        ...prayer,
-        completed: result.data!.prayersCompleted.includes(prayer.name),
-      }));
-      setPrayers(updatedPrayers);
+      setPrayers((prevPrayers) =>
+        prevPrayers.map((prayer) => ({
+          ...prayer,
+          completed: completedPrayers.some(
+            (cp) => cp.prayerName === prayer.name
+          ),
+        }))
+      );
+    } catch (error) {
+      console.error('Error loading completed prayers:', error);
+    }
+  };
+
+  const loadPrayerTimes = async (forceRefresh: boolean = false) => {
+    setLoadingPrayerTimes(true);
+
+    try {
+      // Get cached location for display
+      const cachedLocation = await prayerTimesService.getCachedLocation();
+      if (cachedLocation && cachedLocation.city) {
+        setLocationCity(cachedLocation.city);
+      }
+
+      // Fetch prayer times
+      const result = await prayerTimesService.getPrayerTimes(forceRefresh);
+
+      if (result.success && result.data) {
+        setPrayerTimes(result.data);
+
+        // Update prayer times in the prayers array while preserving completed status
+        setPrayers((prevPrayers) =>
+          prevPrayers.map((prayer) => {
+            const prayerTime = result.data![
+              prayer.name as keyof PrayerTimes
+            ] as string;
+            return {
+              ...prayer,
+              time: prayerTimesService.formatTime12Hour(prayerTime),
+              // Preserve the completed status
+            };
+          })
+        );
+
+        // Update location if available
+        const location = await prayerTimesService.getCachedLocation();
+        if (location && location.city) {
+          setLocationCity(location.city);
+        }
+      } else {
+        // Handle errors
+        if (result.source === 'location_error') {
+          Alert.alert(
+            'Location Required',
+            result.error ||
+              'Unable to get prayer times. Please enable location services.',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Retry', onPress: () => loadPrayerTimes(true) },
+            ]
+          );
+        } else {
+          Alert.alert(
+            'Prayer Times Error',
+            'Unable to load prayer times. Please check your internet connection.',
+            [{ text: 'OK' }]
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error loading prayer times:', error);
+    } finally {
+      setLoadingPrayerTimes(false);
     }
   };
 
@@ -153,9 +240,11 @@ export default function HomeScreen() {
       revertedPrayers[index].completed = false;
       setPrayers(revertedPrayers);
 
+      console.error('Prayer completion error:', result.error);
+
       Alert.alert(
         'Error',
-        'Failed to save prayer completion. Please try again.',
+        result.error || 'Failed to save prayer completion. Please try again.',
         [{ text: 'OK', style: 'default' }]
       );
     }
@@ -191,6 +280,37 @@ export default function HomeScreen() {
       color: theme.textSecondary,
       textAlign: 'center',
       marginBottom: 5,
+    },
+    locationContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginVertical: 8,
+      paddingHorizontal: 20,
+    },
+    locationInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    locationText: {
+      fontSize: 13,
+      color: theme.textSecondary,
+      marginLeft: 6,
+      fontWeight: '500',
+    },
+    refreshButton: {
+      marginLeft: 10,
+      padding: 8,
+      backgroundColor: theme.surface,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: theme.border,
     },
     greeting: {
       fontSize: 18,
@@ -369,6 +489,26 @@ export default function HomeScreen() {
           <Text style={styles.title}>Namaz Tracker</Text>
           <Text style={styles.dateTime}>{formatDate(currentTime)}</Text>
           <Text style={styles.dateTime}>{formatTime(currentTime)}</Text>
+
+          {/* Location and Refresh */}
+          <View style={styles.locationContainer}>
+            <View style={styles.locationInfo}>
+              <MapPin size={16} color={theme.textSecondary} />
+              <Text style={styles.locationText}>{locationCity}</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.refreshButton}
+              onPress={() => loadPrayerTimes(true)}
+              disabled={loadingPrayerTimes}
+            >
+              <RefreshCw
+                size={18}
+                color={theme.secondary}
+                style={loadingPrayerTimes ? { opacity: 0.5 } : {}}
+              />
+            </TouchableOpacity>
+          </View>
+
           <Text style={styles.greeting}>
             Assalamu Alaikum, {user?.name || 'User'}!
           </Text>

@@ -1075,8 +1075,8 @@ This project is developed as part of an academic Software Development Project (S
 For questions or support:
 
 - **Email**: your.email@example.com
-- **GitHub**: https://github.com/yourusername
-- **Project Repository**: https://github.com/yourusername/namaz-tracker
+- **GitHub**: https://github.com/Ahnaf-Abdullah
+- **Project Repository**: https://github.com/Ahnaf-Abdullah/namaz-tracker
 
 ---
 
